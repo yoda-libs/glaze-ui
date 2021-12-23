@@ -1,1 +1,1 @@
-#A micro-fontend framework.
+#A micro-frontend framework.
