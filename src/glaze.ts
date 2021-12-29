@@ -5,10 +5,12 @@ export interface Options {
 }
 
 export interface App {
+    type: 'react' | 'angular' | 'vue' | 'vanilla';
+    externalLibs: {};
     name: string;
     url: string;
-    route: string;
     container: HTMLElement;
+    route?: string;
 }
 
 export interface Subscription {
@@ -16,6 +18,16 @@ export interface Subscription {
 }
 
 declare var System: any;
+const appTypesImports = {
+    react: {
+        "react": "https://unpkg.com/react@17/umd/react.production.min.js",
+        "react-dom": "https://unpkg.com/react-dom@17/umd/react-dom.production.min.js",
+    },
+    angular: {},
+    vue: {},
+    vanilla: {}
+}
+
 
 export class Glaze {
     protected options: Options;
@@ -40,19 +52,20 @@ export class Glaze {
 
     bootstrap() : Promise<void> {
         return new Promise((resolve, _) => {
-            console.time('bootstrap');
             var headEl = document.getElementsByTagName('head')[0];
             var bodyEl = document.getElementsByTagName('body')[0];
             var add = (tag, elName, opts, child?) => tag.appendChild(Object.keys(opts).reduce((el, attr) => el.setAttribute(attr, opts[attr]) || el, document.createElement(elName))).append(child || "");
 
+
+            const appTypes = [...new Set(this.apps.map(x => x.type))];
+
             add(headEl, 'meta', { name: 'importmap-type', content: 'systemjs-importmap'});
             add(headEl, 'script', { type: 'systemjs-importmap' }, JSON.stringify({
-                "imports": {
-                    "react": "https://cdn.jsdelivr.net/npm/react@16.13.1/umd/react.production.min.js",
-                    "react-dom": "https://cdn.jsdelivr.net/npm/react-dom@16.13.1/umd/react-dom.production.min.js",
-                    ...this.apps.reduce((acc, curr) => ({...acc, [curr.name]: curr.url}), {})
-                }
-            })
+                    "imports": {
+                        ...appTypes.reduce((obj, type) => ({...obj, ...appTypesImports[type]}), {}),
+                        ...this.apps.reduce((obj, item) => ({...obj, [item.name]: item.url}), {})
+                    }
+                })
             );
             add(headEl, 'script', { src: 'https://cdn.jsdelivr.net/npm/systemjs@6.8.3/dist/system.min.js'});
             add(headEl, 'script', { src: 'https://cdn.jsdelivr.net/npm/systemjs@6.8.3/dist/extras/amd.min.js'});
@@ -63,21 +76,15 @@ export class Glaze {
                 await this.start();
                 resolve();
             });
-            console.timeEnd('bootstrap');
         });
     }
 
-    private async domLoaded() {
-        await this.start();
-    }
-
     async start() {
-        // deep linking
-        if (location.pathname !== '/') {
-            await this.loadApp(this.getAppByRoute(location.pathname));
-        }
+        // push initial route
+        this.router.pushState(location.pathname);
 
         [...document.getElementsByTagName("a")].forEach(a => {
+            if (a.onclick) return;
             a.onclick = (e: any) => {
                 var route = e.currentTarget.pathname;
                 e.preventDefault();
@@ -86,7 +93,7 @@ export class Glaze {
         });
 
         var routes = [null, null];
-        this.router.always(route => {
+        this.router.always(async route => {
             routes.push(route);
             if (routes.length > 2) routes.shift();
 
@@ -94,46 +101,28 @@ export class Glaze {
             this.log('[router]', {from, to});
 
             if (from) {
-                this.unloadApp(this.getAppByRoute(from));
+                await Promise.all(this.getAppsByRoute(from).map(app => this.unloadApp(app)));
             }
             if (to) {
-                this.loadApp(this.getAppByRoute(to));
+                await Promise.all(this.getAppsByRoute(to).map(app => this.loadApp(app)));
             }
         });
     }
 
-    registerApp(name: string, url: string, route: string, container: HTMLElement) : void {
-        this.apps.push({ name, url, route, container });
+    navigate(route) {
+        this.router.pushState(route);
     }
 
-    async unloadApp(app) {
-        if (!app) return;
-        var module = await System.import(app.name);
-        this.log('[app] Unmounting', app.name);
-        module.default.unmount(app.container);
+    forward() {
+        window.history.forward();
     }
 
-    async loadApp(app) {
-        if (!app) return;
-        var module = await System.import(app.name);
-        this.log('[app] Mounting', app.name);
-        module.default.mount(app.container, {name: app.name, glaze: this});
-    }
-
-    getAppByRoute(route) : App {
-        return this.apps.filter(x => x.route == route)[0];
-    }
-
-    private removeItem<T>(arr: Array<T>, value: T): Array<T> { 
-        const index = arr.indexOf(value);
-        if (index > -1) {
-          arr.splice(index, 1);
-        }
-        return arr;
+    back() {
+        this.router.popState();
     }
 
     dispatch(message?: any) : void {
-        this.log('Dispatching', message);
+        this.log('[glaze send]', message);
         this.observers.forEach(observer => {
             observer(message);
         });
@@ -147,5 +136,37 @@ export class Glaze {
                 this.removeItem(this.observers, observer);
             }
         }
+    }
+
+    registerApp(app: App) : void {
+        this.apps.push(app);
+    }
+
+    private async unloadApp(app) {
+        if (!app) return;
+        var module = await System.import(app.name);
+        this.log('[app] Unmounting', app.name);
+        app.container.setAttribute('display', 'none');
+        module.default.unmount(app.container);
+    }
+
+    private async loadApp(app) {
+        if (!app) return;
+        var module = await System.import(app.name);
+        this.log('[app] Mounting', app.name);
+        module.default.mount(app.container, {name: app.name, glaze: this});
+        app.container.setAttribute('display', 'block');
+    }
+
+    private getAppsByRoute(route) : App[] {
+        return this.apps.filter(x => x.route == route);
+    }
+
+    private removeItem<T>(arr: Array<T>, value: T): Array<T> { 
+        const index = arr.indexOf(value);
+        if (index > -1) {
+          arr.splice(index, 1);
+        }
+        return arr;
     }
 }
