@@ -1,9 +1,13 @@
 {
     "compilerOptions": {
+      // Ensure that Babel can safely transpile files in the TypeScript project
+      "isolatedModules": true,
+      "types": ["jest", "node"],
       "module": "commonjs",
       "target": "es2015",
       "declaration": true,
-      "outDir": "./dist"
+      "outDir": "./dist",
+      // "jsx": "react-jsx",
     },
     "include": [
       "src/**/*"
