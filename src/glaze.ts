@@ -1,3 +1,5 @@
+import { createLayout, route } from ".";
+
 declare var System: any;
 
 export interface Options {
@@ -29,12 +31,12 @@ class Glaze {
         }
     }
     
-    private async loadApps(container: HTMLElement, layout: any) {
+    private async loadApps(container: HTMLElement, layout: any, params?: any) {
         if (!layout) return;
         for (let key in layout.apps) {
             const app = layout.apps[key];
             const el = container.querySelector(`#${key}`);
-            app.renderedApp = await app.mount(el, {name: app.name, glaze: this});
+            app.renderedApp = await app.mount(el, {name: app.name, glaze: this, ...params});
         }
     }
 
@@ -65,19 +67,25 @@ class Glaze {
         if (!router) return resolve(this);
         this.router = router;
         var routes = [null, null];
-        router.subscribe(async route => {
+        router.subscribe(async (path, state) => {
             try {
-                routes.push(route);
+                console.log('[glaze]', path, state);
+                routes.push({path, state});
                 if (routes.length > 2) routes.shift();
 
                 const [from, to] = routes;
                 this.log('[router]', {from, to});
 
-                const [fromApps, toApps] = [router.getLayout(from), router.getLayout(to)];
-                await this.unloadApps(container, fromApps);
-                if (fromApps) container.removeChild(fromApps.template)
-                if (toApps) container.appendChild(toApps.template);
-                await this.loadApps(container, toApps);
+                // const [fromApps, toApps] = [router.getLayout(from), router.getLayout(to)];
+                const [fromRoute, toRoute] = [router.getRoute(from), router.getRoute(to)];
+                var promise = router.executeHandler(toRoute, state);
+                if (promise) await promise;
+                if (fromRoute && fromRoute.layout) {
+                    await this.unloadApps(container, fromRoute.layout.apps);
+                    container.removeChild(fromRoute.layout.template);
+                }
+                if (toRoute.layout) container.appendChild(toRoute.layout.template);
+                await this.loadApps(container, toRoute.layout, state);
                 this.injectRouterInLinks(router);
 
                 if (firstLoad) {
@@ -90,7 +98,7 @@ class Glaze {
         });
 
         // push initial route
-        await router.navigate(location.pathname);
+        await router.navigate(location.pathname, location.search)
     }
 
     dispatch(message?: any) : void {

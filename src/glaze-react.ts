@@ -2,11 +2,7 @@ const mount = (component, react, reactDOM) => (container: HTMLElement, props) =>
     const div = document.createElement('div');
     div.setAttribute('glaze', 'react-app-wrapper');
     container.appendChild(div);
-    const element = react.createElement(
-      component,
-      props
-    );
-    reactDOM.render(element, div);
+    reactDOM.render(react.createElement(component, props), div);
     return div;
 };
   

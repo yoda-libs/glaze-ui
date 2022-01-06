@@ -1,9 +1,13 @@
-import { RouteHandler, Router as RouterBase } from 'html5-history-router';
+import { RouteHandler, RouterBase } from './base-router';
 import { App } from './glaze';
 
 export class Route {
-    public layout: Layout
-    constructor(public path: string, appOrLayout: App | Layout) {
+    public layout: Layout;
+    constructor(public path: string, appOrLayout?: App | Layout, public requestHander?: RequestHandler) {
+        if (typeof appOrLayout === 'function') {
+            this.requestHander = appOrLayout;
+            this.layout = null;
+        }
         if (appOrLayout instanceof App) {
             const app = document.createElement('div');
             app.setAttribute('id', appOrLayout.name);
@@ -23,8 +27,8 @@ export class Router {
         this.routes = routes;
     }
 
-    async navigate(path: string) {
-        return await this.router.pushState(path);
+    async navigate(path: string, state?: any) {
+        return await this.router.pushState(path, state);
     }
 
     forward() {
@@ -39,10 +43,25 @@ export class Router {
         this.router.always(callback);
     }
 
+    executeHandler(route: Route, state: any) {
+        if (!route.requestHander) return;
+        const urlSearchParams = new URLSearchParams(state);
+        const params = state ? Object.fromEntries(urlSearchParams.entries()) : {};
+        route.requestHander(params);
+    }
+
     getLayout(path: string) {
+        if (!path) return null;
         const route = this.routes.filter(x => x.path === path)[0];
-        if (!route) return null;
+        if (!route || !route.layout) return null;
         return route.layout;
+    }
+
+    getRoute(q: any) {
+        if (!q) return null;
+        const { path } = q;
+        const route = this.routes.filter(x => x.path === path)[0];
+        return route;
     }
 }
 
@@ -51,10 +70,16 @@ export class Layout {
     apps: { [name: string]: any }
 }
 
+interface RequestHandler {
+    (params: ({[key : number]: string})) : void;
+}
+
 export const route = (
     path: string,
-    appOrLayout: App | Layout
-) => new Route(path, appOrLayout);
+    appOrLayout?: App | Layout,
+    requestHandler?: RequestHandler
+) => new Route(path, appOrLayout, requestHandler);
+
 
 export const createRoutes = (routes: Route[]) => {
     return new Router(routes);
@@ -63,3 +88,4 @@ export const createRoutes = (routes: Route[]) => {
 export const createLayout = (template: any, apps: { [name: string]: App } ) : Layout => {
     return { template, apps };
 };
+

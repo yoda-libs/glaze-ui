@@ -45,11 +45,16 @@ import {
 const apps = createApps([
     // run 'yarn create glaze-ui-react navbar' to create the navbar app
     // run 'cd navbar && yarn start'
+    // in production replace the url below with the deployed production url
     app('navbar', 'http://localhost:8081/navbar.js'),
+    
+    // add additional apps here
 ]);
 
 const router = createRoutes([
     route('/', apps['navbar']),
+
+    // add additional routes here
 ])
 
 bootstrap({
@@ -99,7 +104,7 @@ Use `createApps` function to register MFE apps.
 `createApps` takes an array of `app` and returns a `Dictionary` with the app name as the key and the app reference as the value.
 ```js
 const apps = createApps([
-    app('navbar', 'http://acme.com/navbar.js'),
+    app('navbar', 'http://acme.com/navbar.js')
 ])
 ```
 ### createApps
@@ -153,7 +158,7 @@ Use `createLayout` function to create a layout. Layouts are used in [routes](#re
 const rootLayout = createLayout(
     <div className="row">
         <div id="navbar" />
-        <div id="content">
+        <div id="content" />
     </div>,
     {
         navbar: apps['navbar'],
