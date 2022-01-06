@@ -160,7 +160,6 @@ const rootLayout = createLayout(
     }
 )
 ```
-_Creates a layout an_
 
 ### createLayout
 * Inputs:
