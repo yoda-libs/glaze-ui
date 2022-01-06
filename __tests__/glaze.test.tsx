@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
  * @jsx createElement
+ * @jest-environment jsdom
  */
 /// <reference types="@types/jest" /> i
 import { bootstrap, createApps, app } from "../src/glaze";
@@ -59,7 +59,7 @@ describe('glaze', () => {
         window.dispatchEvent(new Event('load'));
     });
 
-    test('router can works with templates', () => {
+    test('router can work with templates', () => {
         document.body.innerHTML = '<div id="root"></div>';
         const action = (name) => ({
             mount: (container, props) => {
@@ -103,8 +103,8 @@ describe('glaze', () => {
         }).then(async _ => {
             expect(document.querySelector('#root').innerHTML).toBe('<div class="row"><div id="navbar"><div>rendered navbar</div></div><div class="column"><div id="left"><div>rendered left</div></div><div id="right"><div>rendered right</div></div></div></div>');
             await router.navigate('/login');
-            expect(document.querySelector('#root').innerHTML).toBe('<app id="login"><div>rendered login</div></app>');    
-        }).catch(console.error);
+            expect(document.querySelector('#root').innerHTML).toBe('<div id="login" glaze="layout-auto-generated"></div>');
+        });
         window.dispatchEvent(new Event('load'));
     });
     it('register shared libs', async () => {

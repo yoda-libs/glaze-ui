@@ -74,12 +74,11 @@ class Glaze {
                 this.log('[router]', {from, to});
 
                 const [fromApps, toApps] = [router.getLayout(from), router.getLayout(to)];
-                this.unloadApps(container, fromApps);
+                await this.unloadApps(container, fromApps);
                 if (fromApps) container.removeChild(fromApps.template)
                 if (toApps) container.appendChild(toApps.template);
-                this.loadApps(container, toApps).then(() => {
-                    this.injectRouterInLinks(router);
-                });
+                await this.loadApps(container, toApps);
+                this.injectRouterInLinks(router);
 
                 if (firstLoad) {
                     firstLoad = false;
@@ -155,7 +154,6 @@ export class App {
     }
 
     public async unmount(container: HTMLElement, app: HTMLElement) {
-        await this.checkInstance();
         return this.instance.unmount(container, app);
     }
 
