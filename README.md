@@ -12,14 +12,15 @@ Here is an example of the shell application `index.jsx` file registering `navbar
 
 
 ```js
-/** @jsx createElement */
 import { 
-    createElement, 
-    bootstrap, createApps, app, 
-    createRoutes, createLayout, route
+    bootstrap, 
+    createApps, app, 
+    createRoutes, route
 } from 'glaze-ui';
 
 const apps = createApps([
+    // run 'yarn create glaze-ui-react navbar' to create the navbar app
+    // run 'yarn start'
     app('navbar', 'http://localhost:8081/navbar.js'),
 ]);
 
