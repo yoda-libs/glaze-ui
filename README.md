@@ -6,9 +6,9 @@
 
 Glaze UI is a framework that lets you have multiple Micro Front-End (MFE) applications  on the same Single Page Application (SPA). That means you can have different frameworks like React, Angular and Vue running side-by-side. Including different versions of the same framework. 
 
-It consists on a [Glaze UI shell application](https://github.com/yoda-libs/create-glaze-ui) that can host multiple MFE applications using different technologies. 
+It consists on a [Glaze UI shell application](https://github.com/yoda-libs/create-glaze-ui) that can host multiple MFE applications. 
 
-Here is an example of the shell application `index.jsx` file registering `navbar` as a MFE react application.
+Here is an example of the shell application `index.jsx` file, registering `navbar` as a MFE react application.
 
 
 ```js
@@ -20,7 +20,7 @@ import {
 
 const apps = createApps([
     // run 'yarn create glaze-ui-react navbar' to create the navbar app
-    // run 'yarn start'
+    // run 'cd navbar && yarn start'
     app('navbar', 'http://localhost:8081/navbar.js'),
 ]);
 
@@ -58,12 +58,4 @@ yarn create glaze-ui <name>
 To create a [react micro-front end react app](https://github.com/yoda-libs/create-glaze-ui-react) for glaze, run the command below. <br/>For more information, refer to [create-glaze-ui-react](https://www.npmjs.com/package/create-glaze-ui-react) npm package.
 ```bash
 yarn create glaze-ui-react <app>
-```
-<br/>
-
-Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
-
-```bash
-$ npm install express
 ```
