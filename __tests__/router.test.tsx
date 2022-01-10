@@ -3,7 +3,8 @@
  */
 /// <reference types="@types/jest" /> i
 import { createRoutes, route, createLayout } from "../src/router";
-import { app, createApps } from "../src/glaze";
+import { app, createApps, bootstrap } from "../src/glaze";
+import { Pipeline } from "../src/pipeline";
 
 const createElement = (tag, props, ...children) => {
   if (typeof tag === "function") return tag(props, ...children);
@@ -30,19 +31,24 @@ const appendChild = (parent, child) => {
 };
 
 describe('test', () => {
-  test('test', () => {
+  test('new router', () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const action = (name) => ({
+      mount: (container, props) => {
+          const div = <div>rendered {name}</div>;
+          
+          container.appendChild(div);
+          return div;
+      },
+      unmount: (container, app) => {
+          container.removeChild(app)
+      }
+    });
     const apps = createApps([
-      app('login', {
-          mount: (container, props) => {
-              const div = document.createElement('div');
-              
-              container.appendChild(div);
-              return div;
-          },
-          unmount: (container, app) => {
-              container.removeChild(app)
-          }
-      }),
+        app('login', action('login')),
+        app('navbar', action('navbar')),
+        app('left', action('left')),
+        app('right', action('right')),
     ]);
     const layout = createLayout(
       <div className="row">
@@ -57,9 +63,32 @@ describe('test', () => {
       left: apps['left'],
       right: apps['right'],
     });
-    const routes = createRoutes([
-      route('/login', apps['login']),
+
+    const authMiddleware = async (ctx, next) => {
+      if (ctx.path.startsWith('/login')) return next();
+
+      const { code } = ctx.state;
+      if (!code) return await router.navigate('/login');
+
+      if (ctx.path.startsWith('/auth')) return await router.navigate('/', { code });
+
+      next();
+    };
+    const router = createRoutes([
+      authMiddleware,
       route('/', layout),
+      route('/login', apps['login']),
     ]);
+
+    bootstrap({
+      container: document.getElementById('root'),
+      apps,
+      router
+    }).then(async glaze => {
+      console.log(document.getElementById('root').innerHTML);
+      await router.navigate('/auth', { code: '123' });
+      console.log(document.getElementById('root').innerHTML);
+    }).catch(console.error);
+    window.dispatchEvent(new Event('load'));
   });
-})
+});

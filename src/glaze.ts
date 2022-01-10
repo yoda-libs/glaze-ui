@@ -31,7 +31,7 @@ class Glaze {
         }
     }
     
-    private async loadApps(container: HTMLElement, layout: any, params?: any) {
+    private async loadApps(container: Element, layout: any, params?: any) {
         if (!layout) return;
         for (let key in layout.apps) {
             const app = layout.apps[key];
@@ -40,7 +40,7 @@ class Glaze {
         }
     }
 
-    private async unloadApps(container: HTMLElement, layout: any) {
+    private async unloadApps(container: Element, layout: any) {
         if (!layout) return;
         for (let key in layout.apps) {
             const app = layout.apps[key];
@@ -61,44 +61,14 @@ class Glaze {
         });
     }
 
-    async start(container: HTMLElement, apps: Apps, resolve: (Glaze) => void, router?) {
-        var firstLoad = true;
-
+    async start(container: Element, resolve: (Glaze) => void, router?) {
         if (!router) return resolve(this);
         this.router = router;
-        var routes = [null, null];
-        router.subscribe(async (path, state) => {
-            try {
-                console.log('[glaze]', path, state);
-                routes.push({path, state});
-                if (routes.length > 2) routes.shift();
-
-                const [from, to] = routes;
-                this.log('[router]', {from, to});
-
-                // const [fromApps, toApps] = [router.getLayout(from), router.getLayout(to)];
-                const [fromRoute, toRoute] = [router.getRoute(from), router.getRoute(to)];
-                var promise = router.executeHandler(toRoute, state);
-                if (promise) await promise;
-                if (fromRoute && fromRoute.layout) {
-                    await this.unloadApps(container, fromRoute.layout.apps);
-                    container.removeChild(fromRoute.layout.template);
-                }
-                if (toRoute.layout) container.appendChild(toRoute.layout.template);
-                await this.loadApps(container, toRoute.layout, state);
-                this.injectRouterInLinks(router);
-
-                if (firstLoad) {
-                    firstLoad = false;
-                    resolve(this);
-                }
-            } catch (e) {
-                console.error(e); // added this to catch errors because html5-history-api doesn't work in IE
-            }
-        });
+        await router.start(container);
 
         // push initial route
         await router.navigate(location.pathname, location.search)
+        resolve(this);
     }
 
     dispatch(message?: any) : void {
@@ -128,7 +98,7 @@ class Glaze {
 
 const glaze = new Glaze();
 export interface BootstrapConfig {
-    container: HTMLElement, 
+    container: Element, 
     apps: Apps, 
     router?, 
     sharedLibs?: { [name: string]: string }, 
@@ -139,8 +109,8 @@ interface Dictionary<T> {
     [Key: string]: T;
 }
 interface Bootstrap {
-        mount: (container: HTMLElement, props?) => HTMLElement,
-        unmount: (container: HTMLElement, app: HTMLElement) => void
+        mount: (container: Element, props?) => Element,
+        unmount: (container: Element, app: Element) => void
 }
 class Apps implements Dictionary<App> {
     [Key: string]: App;
@@ -154,14 +124,15 @@ class Apps implements Dictionary<App> {
 
 export class App {
     protected instance: Bootstrap;
+    public renderedApp: Element;;
     constructor(public name: string, public bootstrap: Bootstrap | string) { }
 
-    public async mount(container: HTMLElement, props?: any) {
+    public async mount(container: Element, props?: any) {
         await this.checkInstance();
         return this.instance.mount(container, {...props, name: this.name, glaze});
     }
 
-    public async unmount(container: HTMLElement, app: HTMLElement) {
+    public async unmount(container: Element, app: Element) {
         return this.instance.unmount(container, app);
     }
 
@@ -190,6 +161,7 @@ export function app(name: string, bootstrap: Bootstrap | string) : App {
 
 export function bootstrap(config: BootstrapConfig) : Promise<Glaze> {
     const { container, apps, router, sharedLibs, options } = config;
+    if (!container) throw new Error('Container is required');
     glaze.setOptions(options);
     return new Promise((resolve, reject) => {
         var headEl = document.getElementsByTagName('head')[0];
@@ -214,7 +186,7 @@ export function bootstrap(config: BootstrapConfig) : Promise<Glaze> {
 
         const pageLoaded = async () => {
             try {
-                await glaze.start(container, apps, resolve, router);
+                await glaze.start(container, resolve, router);
             } catch (e) {
                 reject(e);
             }

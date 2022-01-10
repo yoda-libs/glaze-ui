@@ -71,7 +71,7 @@ export class RouterBase {
     /**
      * Push route state to history stack
      */
-    public pushState<T extends RouterState = RouterState>(url = '/', state: T = {} as T) {
+    public async pushState<T extends RouterState = RouterState>(url = '/', state: T = {} as T) {
         if (!state.reverted) {
             this._saveState(document.location.pathname, history.state);
         }
@@ -86,7 +86,7 @@ export class RouterBase {
             return Promise.resolve(false);
         }
 
-        return this._onLocationChange();
+        return await this._onLocationChange();
     }
 
     /**
@@ -99,10 +99,10 @@ export class RouterBase {
     /**
      * Replace current url to new with state
      */
-    public replaceState<T extends RouterState = RouterState>(url = '/', state = {} as T) {
+    public async replaceState<T extends RouterState = RouterState>(url = '/', state = {} as T) {
         history.replaceState(state, document.title, url);
 
-        return this._onLocationChange();
+        return await this._onLocationChange();
     }
 
     /**
@@ -187,31 +187,33 @@ export class RouterBase {
     /**
      * Location change callback
      */
-    private _onLocationChange(applied?: boolean) {
+    private async _onLocationChange(applied?: boolean) {
         const path = decodeURI(location.pathname);
 
         if (this.options.debug) {
             log(`pushChange, ${path}`);
         }
 
-        // Resolve already in progress
-        if (this._resolving) {
-            return this._resolving;
-        }
+        await this._resolveLocation(path, history.state, applied);
 
-        this._resolving = this._resolver(this._prevUrl, path).then((result) => {
-            if (result) {
-                this._resolving = null;
-                return this._resolveLocation(path, history.state, applied);
-            } else {
-                return this._revertState().then(() => {
-                    this._resolving = null;
-                    return result;
-                });
-            }
-        });
+        // // Resolve already in progress
+        // if (this._resolving) {
+        //     return this._resolving;
+        // }
 
-        return this._resolving;
+        // this._resolving = this._resolver(this._prevUrl, path).then((result) => {
+        //     if (result) {
+        //         this._resolving = null;
+        //         return this._resolveLocation(path, history.state, applied);
+        //     } else {
+        //         return this._revertState().then(() => {
+        //             this._resolving = null;
+        //             return result;
+        //         });
+        //     }
+        // });
+
+        // return this._resolving;
     }
 
     /**
@@ -231,12 +233,12 @@ export class RouterBase {
     /**
      * Resolve location
      */
-    private _resolveLocation(path: string, state: RouterState, applied: boolean) {
+    private async _resolveLocation(path: string, state: RouterState, applied: boolean) {
         this._handleRoutes(path, state, applied);
         this._saveState(path, state);
-        this.alwaysFunc(path, state);
+        await this.alwaysFunc(path, state);
 
-        return Promise.resolve(true);
+        return true;
     }
 
     /**
