@@ -18,17 +18,32 @@ All other MFE frameworks availabe are complex to use. `Glaze UI` was designed wi
 <br/><br/>
 
 ## Quick Start
+<br/>
 
+### Shell
 To create the [shell application](https://github.com/yoda-libs/create-glaze-ui), run the command below. <br/>For more information, refer to [create-glaze-ui](https://www.npmjs.com/package/create-glaze-ui) npm package.
 ```bash
 yarn create glaze-ui <name>
 ```
+<br/>
 
+### React
 To create a [react micro-front end react app](https://github.com/yoda-libs/create-glaze-ui-react) for glaze, run the command below. <br/>For more information, refer to [create-glaze-ui-react](https://www.npmjs.com/package/create-glaze-ui-react) npm package.
 ```bash
 yarn create glaze-ui-react <app>
 ```
+<br/>
+
+### Angular
+`COMING SOON`
 <br/><br/>
+
+
+### Vue
+`COMING SOON`
+
+<br/><br/>
+
 
 ## Shell Application Example
 
@@ -82,6 +97,10 @@ bootstrap({
   - [A framework for micro front-end services (MFE)](#a-framework-for-micro-front-end-services-mfe)
   - [Motivation](#motivation)
   - [Quick Start](#quick-start)
+    - [Shell](#shell)
+    - [React](#react)
+    - [Angular](#angular)
+    - [Vue](#vue)
   - [Shell Application Example](#shell-application-example)
   - [Requirements](#requirements)
   - [Table of contents](#table-of-contents)
