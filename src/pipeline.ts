@@ -1,6 +1,9 @@
 type Next = () => Promise<void> | void
 
-export type Middleware<T> = (context: T, next: Next) => Promise<void> | void
+export type Middleware<T> = {
+  type: 'custom' | 'route' | 'defaultRoute',
+  executor: (context: T, next: Next) => Promise<void> | void
+}
 
 export type Pipeline<T> = {
   push: (...middlewares: Middleware<T>[]) => void
@@ -27,7 +30,7 @@ export function Pipeline<T>(...middlewares: Middleware<T>[]): Pipeline<T> {
       const middleware = stack[index]
 
       if (middleware) {
-        await middleware(context, () => {
+        await middleware.executor(context, () => {
           return runner(index + 1)
         })
       }

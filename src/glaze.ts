@@ -1,5 +1,3 @@
-import { createLayout, route } from ".";
-
 declare var System: any;
 
 export interface Options {
@@ -29,36 +27,6 @@ class Glaze {
             debug: false,
             ...options
         }
-    }
-    
-    private async loadApps(container: Element, layout: any, params?: any) {
-        if (!layout) return;
-        for (let key in layout.apps) {
-            const app = layout.apps[key];
-            const el = container.querySelector(`#${key}`);
-            app.renderedApp = await app.mount(el, {name: app.name, glaze: this, ...params});
-        }
-    }
-
-    private async unloadApps(container: Element, layout: any) {
-        if (!layout) return;
-        for (let key in layout.apps) {
-            const app = layout.apps[key];
-            const el = container.querySelector(`#${key}`);
-            await app.unmount(el, app.renderedApp);
-            delete app.renderedApp;
-        }
-    }
-
-    private injectRouterInLinks(router: any) {
-        [...document.getElementsByTagName("a")].forEach(a => {
-            if (a.onclick && a.onclick.name !== 'noop') return;
-            a.onclick = (e: any) => {
-                var route = e.currentTarget.pathname;
-                e.preventDefault();
-                router.navigate(route);
-            }
-        });
     }
 
     async start(container: Element, resolve: (Glaze) => void, router?) {

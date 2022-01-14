@@ -1,4 +1,4 @@
-import { RouteHandler, RouterBase } from './base-router';
+import { RouterBase } from './base-router';
 import { Pipeline, Middleware } from './pipeline';
 import { App } from './glaze';
 
@@ -23,7 +23,6 @@ export class Route {
 
 export class Router {
     protected router: RouterBase;
-    public routes: Route[];
     protected pipeline: Pipeline<Context>;
     protected prevLayout: Layout;
     protected routeChangeStack = [];
@@ -49,27 +48,6 @@ export class Router {
         this.router.popState();
     }
 
-    executeHandler(route: Route, state: any) {
-        if (!route.requestHander) return;
-        const urlSearchParams = new URLSearchParams(state);
-        const params = state ? Object.fromEntries(urlSearchParams.entries()) : {};
-        route.requestHander(params);
-    }
-
-    getLayout(path: string) {
-        if (!path) return null;
-        const route = this.routes.filter(x => x.path === path)[0];
-        if (!route || !route.layout) return null;
-        return route.layout;
-    }
-
-    getRoute(q: any) {
-        if (!q) return null;
-        const { path } = q;
-        const route = this.routes.filter(x => x.path === path)[0];
-        return route;
-    }
-
     private injectRouterInLinks() {
         [...document.getElementsByTagName("a")].forEach(a => {
             if (a.onclick && a.onclick.name !== 'noop') return;
@@ -83,9 +61,6 @@ export class Router {
     
     private onRouteChange(container: Element) : (path: string, querystring?: any) => Promise<void> {
         const func = (cancelPrevRouteChange: () => void, shouldCancelThisRoute: () => boolean) => async (path: string, querystring?: any) => {    
-            if (this.prevLayout) await this.prevLayout.unloadApps(container);
-            delete this.prevLayout;
-
             const urlSearchParams = new URLSearchParams(querystring);
             const state = querystring ? Object.fromEntries(urlSearchParams.entries()) : {};        
             var context: Context = { path, state, matches: [] };
@@ -96,16 +71,22 @@ export class Router {
             context.matches.sort((a,b) => (a.score > b.score) ? -1 : ((b.score > a.score) ? 1 : 0))
             const match = context.matches[0];
             const { layout } = match;
+
+            // unload previous layout
+            if (this.prevLayout) {
+                await this.prevLayout.unloadApps(container);
+                this.prevLayout = null;
+            }
+
+            // load new layout
             if (layout) {
                 // cancel previous route change
                 cancelPrevRouteChange();
                 await layout.loadApps(container);
+                this.prevLayout = layout;
                 this.routeChangeStack = [];
                 this.injectRouterInLinks();
             }
-
-
-            this.prevLayout = layout;
         };
         
         return new RouteChange(this.routeChangeStack, func).run;
@@ -125,7 +106,6 @@ class RouteChange {
         }, () => this.cancelRoute);
         routeChangeStack.push(this);
     }
-
 
     public cancel() {
         this.cancelRoute = true;
@@ -148,7 +128,7 @@ export class Layout {
             appsToLoad.push(app.mount(el, this.template));
         }
         var renderedApps: Element[] = await Promise.all(appsToLoad);
-        const keys = Object.keys(this.apps);
+        const keys = this.apps ? Object.keys(this.apps) : [];
         renderedApps.map((renderedApp, index) => this.apps[keys[index]].renderedApp = renderedApp);
     }
 
@@ -160,7 +140,7 @@ export class Layout {
             appsToUnload.push(app.unmount(el, app.renderedApp));
         }
         await Promise.all(appsToUnload);
-        Object.keys(this.apps).forEach(key => delete this.apps[key].renderedApp);
+        this.apps ? Object.keys(this.apps).forEach(key => delete this.apps[key].renderedApp) : null;
         container.removeChild(this.template);
     }
 }
@@ -169,24 +149,36 @@ interface RequestHandler {
     (params: ({[key : string]: string})) : Promise<boolean> | void;
 }
 
-export const createRoutes = (middlewares: Middleware<Context>[]) => {
-    return new Router(middlewares.reverse());
-}
-
 type Context = {
     path: string;
     state?: any;
     matches: {score: number, layout: Layout}[];
 }
 
-export const route = (
-    path: string,
-    appOrLayout?: App | Layout
-) => {
-    return (ctx: Context, next) => {
-        if (!ctx.path.startsWith(path)) return next();
+export const createRoutes = (middlewares: (Middleware<Context> | ((any, Next) => Promise<void> | void))[]) => {
+    var newMiddlewares = middlewares.map(middleware => (typeof middleware === 'function' ? { name: 'custom', executor: middleware } : middleware) as Middleware<Context>);
 
-        var layout;
+    // check for single default route
+    if(newMiddlewares.filter(m => m.type === 'defaultRoute').length > 1) throw new Error('Only one default route is allowed');
+
+    // move default route to the end
+    const defaultRouteIndex = newMiddlewares.findIndex(m => m.type === 'defaultRoute');
+    if (defaultRouteIndex !== -1) {
+        const defaultRoute = newMiddlewares.splice(defaultRouteIndex, 1)[0];
+        newMiddlewares.push(defaultRoute);
+    }
+
+    return new Router(newMiddlewares);
+}
+
+
+
+export const createLayout = (template: any, apps: { [name: string]: App } ) : Layout => {
+    return new Layout(template, apps);
+};
+
+const mapAppToLayout = (appOrLayout: App | Layout) => {
+    var layout;
         if (appOrLayout instanceof App) {
             const app = document.createElement('div');
             app.setAttribute('id', appOrLayout.name);
@@ -195,16 +187,45 @@ export const route = (
         } else {
             layout = appOrLayout;
         }
+    return layout;
+}
 
-        ctx.matches.push({
-            score: path.length, 
-            layout
-        });
-        next();
+export const route = (
+    path: string,
+    appOrLayout?: App | Layout
+) => {
+    return {
+        type: 'route',
+        executor: (ctx: Context, next) => {
+            const layout = mapAppToLayout(appOrLayout);
+            if (path === '/' && ctx.path === '/') {
+                ctx.matches.push({ score: 100, layout });
+            } else {
+                if (path.substring(1) && ctx.path.toLocaleLowerCase().substring(1).startsWith(path.toLocaleLowerCase().substring(1))) {
+                    ctx.matches.push({
+                        score: path.length, 
+                        layout
+                    });
+                }
+            }
+            next();
+        }
     }
 }
 
-export const createLayout = (template: any, apps: { [name: string]: App } ) : Layout => {
-    return new Layout(template, apps);
-};
+export const defaultRoute = (appOrLayout?: App | Layout) => {
+    return  {
+        type: 'defaultRoute',
+        executor: (ctx: Context, next) => {
+            if (ctx.matches.length > 0) return next();
 
+            const layout = mapAppToLayout(appOrLayout);
+
+            ctx.matches.push({
+                score: 100, 
+                layout
+            });
+            next();
+        }
+    }
+}
