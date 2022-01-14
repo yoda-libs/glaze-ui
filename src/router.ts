@@ -1,6 +1,7 @@
 import { RouterBase } from './base-router';
 import { Pipeline, Middleware } from './pipeline';
 import { App } from './glaze';
+import { glazeReact } from '.';
 
 export class Route {
     public layout: Layout;
@@ -118,6 +119,10 @@ export class Layout {
     async loadApps(container: Element) {
         container.appendChild(this.template);
         var appsToLoad = [];
+        var readyResolver;
+        const ready = new Promise<void>(resolve => {
+            readyResolver = resolve;
+        });
         for (let key in this.apps) {
             const app = this.apps[key];
             if (!app) throw new Error(`App ${key} not found`);
@@ -125,11 +130,12 @@ export class Layout {
             const el = container.querySelector(`#${key}`);
             if (!el) throw new Error(`Div ${key} not found in layout template`);
 
-            appsToLoad.push(app.mount(el, this.template));
+            appsToLoad.push(app.mount(el, this.template, ready));
         }
         var renderedApps: Element[] = await Promise.all(appsToLoad);
         const keys = this.apps ? Object.keys(this.apps) : [];
         renderedApps.map((renderedApp, index) => this.apps[keys[index]].renderedApp = renderedApp);
+        setTimeout(() => readyResolver(), 10); //TODO: get back to this
     }
 
     async unloadApps(container: Element) {

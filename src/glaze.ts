@@ -9,6 +9,9 @@ export interface Subscription {
 }
 
 class Glaze {
+    public ready: Promise<void> = null;
+    protected initializedResolver: () => void = null;
+
     protected options?: Options;
     protected observers: Array<(message?: any) => void>;
     protected log: (message?: any, ...optionalParams: any[]) => void;
@@ -16,6 +19,9 @@ class Glaze {
 
     constructor() {
         this.observers = [];
+        this.ready = new Promise(resolve => {
+            this.initializedResolver = resolve;
+        });
 
         this.log = (message?, ...optionalParams) => {
             if (this.options.debug) console.log(message, ...optionalParams);
@@ -37,12 +43,25 @@ class Glaze {
         // push initial route
         await router.navigate(location.pathname, location.search)
         resolve(this);
+        this.initializedResolver();
+    }
+
+    getLazyDispatch(ready: Promise<void> = Promise.resolve()) {
+        return message => {
+            ready.then(() => {
+                this.observers.forEach(observer => {
+                    observer(message);
+                });
+            });
+        };
     }
 
     dispatch(message?: any) : void {
         this.log('[glaze send]', message);
-        this.observers.forEach(observer => {
-            observer(message);
+        this.ready.then(() => {
+            this.observers.forEach(observer => {
+                observer(message);
+            });
         });
     }
 
@@ -77,7 +96,7 @@ interface Dictionary<T> {
     [Key: string]: T;
 }
 interface Bootstrap {
-        mount: (container: Element, props?) => Element,
+        mount: (container: Element, props?: any) => Element,
         unmount: (container: Element, app: Element) => void
 }
 class Apps implements Dictionary<App> {
@@ -90,14 +109,20 @@ class Apps implements Dictionary<App> {
     }
 }
 
+export const blankApp = {
+    mount: () => {},
+    unmount: () => {},
+};
+
 export class App {
     protected instance: Bootstrap;
     public renderedApp: Element;;
     constructor(public name: string, public bootstrap: Bootstrap | string) { }
 
-    public async mount(container: Element, props?: any) {
+    public async mount(container: Element, props?: any, ready?: Promise<void>) {
         await this.checkInstance();
-        return this.instance.mount(container, {...props, name: this.name, glaze});
+        var dispatch = glaze.getLazyDispatch(ready);
+        return this.instance.mount(container, {...props, name: this.name, glaze, dispatch});
     }
 
     public async unmount(container: Element, app: Element) {
