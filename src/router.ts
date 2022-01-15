@@ -34,7 +34,9 @@ export class Router {
     }
 
     private addBaseUrl(path: string) {
-        if (!path.startsWith('/')) return path;
+        if (path.startsWith(this.baseUrl ?? '/')) {
+            return path;
+        }
         return this.baseUrl + path;
     }
 
@@ -70,6 +72,8 @@ export class Router {
     
     private onRouteChange(container: Element) : (path: string, querystring?: any) => Promise<void> {
         const func = (cancelPrevRouteChange: () => void, shouldCancelThisRoute: () => boolean) => async (path: string, querystring?: any) => {    
+            path = path.replace(this.baseUrl, '');
+            
             const urlSearchParams = new URLSearchParams(querystring);
             const state = querystring ? Object.fromEntries(urlSearchParams.entries()) : {};        
             var context: Context = { path, state, matches: [] };
