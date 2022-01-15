@@ -2,6 +2,7 @@ declare var System: any;
 
 export interface Options {
     debug?: boolean;
+    baseUrl?: string;
 }
 
 export interface Subscription {
@@ -35,10 +36,10 @@ class Glaze {
         }
     }
 
-    async start(container: Element, resolve: (Glaze) => void, router?) {
+    async start(container: Element, resolve: (Glaze) => void, router?, options?: Options) {
         if (!router) return resolve(this);
         this.router = router;
-        await router.start(container);
+        await router.start(container, options);
 
         // push initial route
         await router.navigate(location.pathname, location.search)
@@ -179,7 +180,7 @@ export function bootstrap(config: BootstrapConfig) : Promise<Glaze> {
 
         const pageLoaded = async () => {
             try {
-                await glaze.start(container, resolve, router);
+                await glaze.start(container, resolve, router, options);
             } catch (e) {
                 reject(e);
             }

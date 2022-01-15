@@ -1,7 +1,6 @@
 import { RouterBase } from './base-router';
 import { Pipeline, Middleware } from './pipeline';
-import { App } from './glaze';
-import { glazeReact } from '.';
+import { App, Options } from './glaze';
 
 export class Route {
     public layout: Layout;
@@ -28,16 +27,25 @@ export class Router {
     protected prevLayout: Layout;
     protected routeChangeStack = [];
     protected cancelPrevRouteChange: boolean = false;
+    protected baseUrl: string;
     constructor(middlewares: Middleware<Context>[]) {
         this.router = new RouterBase();
         this.pipeline = Pipeline<Context>(...middlewares);
     }
 
+    private addBaseUrl(path: string) {
+        if (!path.startsWith('/')) return path;
+        return this.baseUrl + path;
+    }
+
     async navigate(path: string, state?: any) {
+        path = this.addBaseUrl(path);
         return await this.router.pushState(path, state);
     }
 
-    async start(container: Element) {
+    async start(container: Element, options?: Options) {
+        this.baseUrl = options?.baseUrl || '';
+        this.baseUrl.endsWith('/') ? this.baseUrl.substring(this.baseUrl.length-1) : this.baseUrl;
         this.router.always(async (path, querystring) => await this.onRouteChange(container)(path, querystring));
     }
 
