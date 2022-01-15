@@ -17,6 +17,16 @@ It consists on a [Glaze UI shell application](https://github.com/yoda-libs/creat
 All other MFE frameworks availabe are complex to use. `Glaze UI` was designed with simplicity in mind, but also functionality and extensibility.
 <br/><br/>
 
+## Examples
+### Live example: 
+[https://yoda-libs.github.io/glaze-ui-examples](https://yoda-libs.github.io/glaze-ui-examples).
+
+### Github:
+[https://github.com/yoda-libs/glaze-ui-examples](https://github.com/yoda-libs/glaze-ui-examples)
+
+
+<br /><br />
+
 ## Quick Start
 <br/>
 
@@ -92,6 +102,9 @@ bootstrap({
 - [Glaze UI](#glaze-ui)
   - [A framework for micro front-end services (MFE)](#a-framework-for-micro-front-end-services-mfe)
   - [Motivation](#motivation)
+  - [Examples](#examples)
+    - [Live example:](#live-example)
+    - [Github:](#github)
   - [Quick Start](#quick-start)
     - [Shell application](#shell-application)
     - [React micro front-end](#react-micro-front-end)
