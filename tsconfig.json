@@ -1,15 +1,36 @@
 {
-    "compilerOptions": {
-      // Ensure that Babel can safely transpile files in the TypeScript project
-      "isolatedModules": true,
-      "types": ["jest", "node"],
-      "module": "commonjs",
-      "target": "es2015",
-      "declaration": true,
-      "outDir": "./dist",
-      "jsx": "react",
-    },
-    "include": [
-      "src/**/*"
-    ]
+  "compilerOptions": {
+    // Ensure that Babel can safely transpile files in the TypeScript project
+    // "isolatedModules": true,
+    // "types": ["jest", "node"],
+    "types": ["node"],
+    // "module": "amd",
+    "module": "commonjs",
+    "target": "es2015",
+    "declaration": true,
+    "outDir": "./dist",
+    "jsx": "react",
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "files":[
+    "./src/index.ts",
+  ]
 }
+
+// {
+//     "compilerOptions": {
+//       // Ensure that Babel can safely transpile files in the TypeScript project
+//       "isolatedModules": true,
+//       "types": ["jest", "node"],
+//       "module": "commonjs",
+//       "target": "es2015",
+//       "declaration": true,
+//       "outDir": "./dist",
+//       "jsx": "react",
+//     },
+//     "include": [
+//       "src/**/*"
+//     ]
+// }

@@ -164,7 +164,7 @@ export class RouterBase {
                 })
                 .replace(/\*/g, '(?:.*)');
 
-            regexp = new RegExp(`${expression}(?:/$|$)`);
+            regexp = new RegExp(`${expression}(?:/$|$)/`);
         }
 
         return {

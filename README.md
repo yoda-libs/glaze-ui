@@ -18,11 +18,12 @@ All other MFE frameworks availabe are complex to use. `Glaze UI` was designed wi
 <br/><br/>
 
 ## Examples
-### Live example: 
-[https://yoda-libs.github.io/glaze-ui-examples](https://yoda-libs.github.io/glaze-ui-examples).
 
-### Github:
-[https://github.com/yoda-libs/glaze-ui-examples](https://github.com/yoda-libs/glaze-ui-examples)
+[Multiple React Apps ](https://yoda-libs.github.io/glaze-ui-examples/multiple-react-apps)
+
+`More examples coming soon`
+
+Github: [https://github.com/yoda-libs/glaze-ui-examples](https://github.com/yoda-libs/glaze-ui-examples)
 
 
 <br /><br />
@@ -103,8 +104,6 @@ bootstrap({
   - [A framework for micro front-end services (MFE)](#a-framework-for-micro-front-end-services-mfe)
   - [Motivation](#motivation)
   - [Examples](#examples)
-    - [Live example:](#live-example)
-    - [Github:](#github)
   - [Quick Start](#quick-start)
     - [Shell application](#shell-application)
     - [React micro front-end](#react-micro-front-end)
