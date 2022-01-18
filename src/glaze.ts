@@ -10,22 +10,22 @@ export interface Subscription {
 }
 
 class Glaze {
-    public ready: Promise<void> = null;
-    protected initializedResolver: () => void = null;
+    public readyToDispatch: Promise<void> = null;
+    protected readyToDispatchResolver: () => void = null;
 
     protected options?: Options;
     protected observers: Array<(message?: any) => void>;
-    protected log: (message?: any, ...optionalParams: any[]) => void;
+    public log: (message?: any, ...optionalParams: any[]) => void;
     public router: any;
 
     constructor() {
         this.observers = [];
-        this.ready = new Promise(resolve => {
-            this.initializedResolver = resolve;
+        this.readyToDispatch = new Promise(resolve => {
+            this.readyToDispatchResolver = resolve;
         });
 
         this.log = (message?, ...optionalParams) => {
-            if (this.options.debug) console.log(message, ...optionalParams);
+            if (this.options.debug) console.log('[glaze]', message, ...optionalParams);
         }
     }
 
@@ -41,10 +41,8 @@ class Glaze {
         this.router = router;
         await router.start(container, options);
 
-        // push initial route
-        await router.navigate(location.pathname, location.search)
         resolve(this);
-        this.initializedResolver();
+        this.readyToDispatchResolver();
     }
 
     getLazyDispatch(ready: Promise<void> = Promise.resolve()) {
@@ -59,7 +57,7 @@ class Glaze {
 
     dispatch(message?: any) : void {
         this.log('[glaze send]', message);
-        this.ready.then(() => {
+        this.readyToDispatch.then(() => {
             this.observers.forEach(observer => {
                 observer(message);
             });
@@ -174,17 +172,17 @@ export function bootstrap(config: BootstrapConfig) : Promise<Glaze> {
         );
 
         add(headEl, 'script', { src: 'https://cdn.jsdelivr.net/npm/systemjs@6.8.3/dist/system.min.js'});
-        // add(headEl, 'script', { src: 'https://cdn.jsdelivr.net/npm/systemjs@6.8.3/dist/extras/amd.min.js'});
         add(headEl, 'script', { src: 'https://cdn.jsdelivr.net/npm/import-map-overrides@2.2.0/dist/import-map-overrides.js'});
         add(bodyEl, 'import-map-overrides-full', { "show-when-local-storage": "devtools", "dev-libs": "" });
 
         const pageLoaded = async () => {
+            window.removeEventListener('load', pageLoaded);
             try {
                 await glaze.start(container, resolve, router, options);
+                glaze.log('Framework started');
             } catch (e) {
                 reject(e);
             }
-            window.removeEventListener('load', pageLoaded);
         };
         window.addEventListener('load', pageLoaded);
     });

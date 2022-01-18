@@ -46,9 +46,17 @@ export class Router {
     }
 
     async start(container: Element, options?: Options) {
-        this.baseUrl = options?.baseUrl || '';
-        this.baseUrl.endsWith('/') ? this.baseUrl.substring(this.baseUrl.length-1) : this.baseUrl;
-        this.router.always(async (path, querystring) => await this.onRouteChange(container)(path, querystring));
+        return new Promise<void>(async resolve => {
+            this.baseUrl = options?.baseUrl || '';
+            this.baseUrl.endsWith('/') ? this.baseUrl.substring(this.baseUrl.length-1) : this.baseUrl;
+            this.router.always(async (path, querystring) => {
+                await this.onRouteChange(container)(path, querystring);
+                resolve();
+            });
+            // push initial route
+            await this.navigate(location.pathname, location.search)
+        });
+
     }
 
     forward() {
@@ -87,7 +95,7 @@ export class Router {
 
             // unload previous layout
             if (this.prevLayout) {
-                await this.prevLayout.unloadApps(container);
+                await this.prevLayout.unmount(container);
                 this.prevLayout = null;
             }
 
@@ -95,7 +103,7 @@ export class Router {
             if (layout) {
                 // cancel previous route change
                 cancelPrevRouteChange();
-                await layout.loadApps(container);
+                await layout.mount(container);
                 this.prevLayout = layout;
                 this.routeChangeStack = [];
                 this.injectRouterInLinks();
@@ -128,7 +136,7 @@ class RouteChange {
 export class Layout {
     constructor(public template: Element, public apps: {[key: string]: App}) { }
 
-    async loadApps(container: Element) {
+    async mount(container: Element) {
         container.appendChild(this.template);
         var appsToLoad = [];
         var readyResolver;
@@ -150,7 +158,7 @@ export class Layout {
         setTimeout(() => readyResolver(), 10); //TODO: get back to this
     }
 
-    async unloadApps(container: Element) {
+    async unmount(container: Element) {
         var appsToUnload = [];
         for (let key in this.apps) {
             const app = this.apps[key];
@@ -228,7 +236,7 @@ export const route = (
             }
             next();
         }
-    }
+    } as Middleware<Context>;
 }
 
 export const defaultRoute = (appOrLayout?: App | Layout) => {
@@ -245,5 +253,5 @@ export const defaultRoute = (appOrLayout?: App | Layout) => {
             });
             next();
         }
-    }
+    } as Middleware<Context>;
 }

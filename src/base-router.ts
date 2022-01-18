@@ -164,7 +164,7 @@ export class RouterBase {
                 })
                 .replace(/\*/g, '(?:.*)');
 
-            regexp = new RegExp(`${expression}(?:/$|$)/`);
+            regexp = new RegExp(`/${expression}(?:/$|$)/`);
         }
 
         return {
@@ -238,7 +238,7 @@ export class RouterBase {
         this._saveState(path, state);
         await this.alwaysFunc(path, state);
 
-        return true;
+        return Promise.resolve(true);
     }
 
     /**

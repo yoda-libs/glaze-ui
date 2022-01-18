@@ -26,7 +26,7 @@ describe('glaze', () => {
         const apps = createApps([
             app('login', {
                 mount: (container, props) => {
-                    const div = <div>rendered login</div>;
+                    const div = (<div>rendered login</div>) as any;
                     
                     container.appendChild(div);
                     return div;
@@ -35,25 +35,19 @@ describe('glaze', () => {
                     container.removeChild(app)
                 }
             }),
-            app('navbar', 'http://localhost:8183/navbar.js'),
-            app('navbar1', System.import('http://localhost:8183/navbar.js')),
         ]);
 
         bootstrap({
             container: document.getElementById('root'),
-            apps,
-            options: { debug: true }
+            apps
         }).then(async _ => {
 
             const root = document.getElementById('root');
+
             const loginApp = await apps['login'].mount(root);
+            expect(root.innerHTML).toBe('<div>rendered login</div>');
             await apps['login'].unmount(root, loginApp);
-
-            const navbarApp = await apps['navbar'].mount(root);
-            await apps['navbar'].unmount(root, navbarApp);
-
-            const navbar1App = await apps['navbar'].mount(root);
-            await apps['navbar1'].unmount(root, navbar1App);
+            expect(root.innerHTML).toBe('');
     
         }).catch(console.error);
         window.dispatchEvent(new Event('load'));
@@ -66,7 +60,7 @@ describe('glaze', () => {
                 const div = <div>rendered {name}</div>;
                 
                 container.appendChild(div);
-                return div;
+                return div as any;
             },
             unmount: (container, app) => {
                 container.removeChild(app)
@@ -103,11 +97,12 @@ describe('glaze', () => {
         }).then(async _ => {
             expect(document.querySelector('#root').innerHTML).toBe('<div class="row"><div id="navbar"><div>rendered navbar</div></div><div class="column"><div id="left"><div>rendered left</div></div><div id="right"><div>rendered right</div></div></div></div>');
             await router.navigate('/login');
-            expect(document.querySelector('#root').innerHTML).toBe('<div id="login" glaze="layout-auto-generated"></div>');
+            expect(document.querySelector('#root').innerHTML).toBe('<div id=\"login\" glaze=\"layout-auto-generated\"><div>rendered login</div></div>');
         });
         window.dispatchEvent(new Event('load'));
     });
     it('register shared libs', async () => {
+        document.body.innerHTML = '<div id="root"></div>';
         const apps = createApps([
             app('login', {
                 mount: (container, props) => {
