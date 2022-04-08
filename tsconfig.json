@@ -10,6 +10,7 @@
     "declaration": true,
     "outDir": "./dist",
     "jsx": "react",
+    "resolveJsonModule": true,
   },
   "include": [
     "src/**/*"
@@ -18,19 +19,3 @@
     "./src/index.ts",
   ]
 }
-
-// {
-//     "compilerOptions": {
-//       // Ensure that Babel can safely transpile files in the TypeScript project
-//       "isolatedModules": true,
-//       "types": ["jest", "node"],
-//       "module": "commonjs",
-//       "target": "es2015",
-//       "declaration": true,
-//       "outDir": "./dist",
-//       "jsx": "react",
-//     },
-//     "include": [
-//       "src/**/*"
-//     ]
-// }

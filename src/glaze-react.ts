@@ -3,6 +3,7 @@ const mount = (component, react, reactDOM, hot) => (container: HTMLElement, prop
     div.setAttribute('glaze', 'react-app-wrapper');
     container.appendChild(div);
     if (hot) hot(props, div);
+    if (typeof component === 'function') component = component(props);
     const el = react.createElement(component, props);
     reactDOM.render(el, div);
   

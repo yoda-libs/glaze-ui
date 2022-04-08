@@ -1,6 +1,6 @@
 {
   "name": "glaze-ui",
-  "version": "1.0.23",
+  "version": "2.0",
   "description": "Glaze UI is a framework that lets you have multiple Micro Front-End (MFE) applications on the same Single Page Application (SPA). That means you can have different frameworks like React, Angular and Vue running side-by-side. Including different versions of the same framework. It consists on a Glaze UI shell application that can host multiple MFE applications.",
   "license": "MIT",
   "keywords": [
@@ -19,8 +19,10 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc-watch -p tsconfig.json",
     "compile": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "npm run test -- --watch"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,10 +37,11 @@
     "@babel/preset-typescript": "^7.16.7",
     "@types/jest": "^27.4.0",
     "babel-jest": "^27.4.5",
-    "jest": "^27.4.5",
+    "jest": "^27.5.1",
     "regenerator-runtime": "^0.13.9",
     "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
+    "tsc-watch": "^4.6.0",
     "typescript": "^4.5.4"
   },
   "dependencies": {}

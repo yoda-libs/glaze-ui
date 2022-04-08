@@ -86,7 +86,7 @@ export class RouterBase {
             return Promise.resolve(false);
         }
 
-        return await this._onLocationChange();
+        return this._onLocationChange();
     }
 
     /**
@@ -99,10 +99,10 @@ export class RouterBase {
     /**
      * Replace current url to new with state
      */
-    public async replaceState<T extends RouterState = RouterState>(url = '/', state = {} as T) {
+    public replaceState<T extends RouterState = RouterState>(url = '/', state = {} as T) {
         history.replaceState(state, document.title, url);
 
-        return await this._onLocationChange();
+        return this._onLocationChange();
     }
 
     /**
@@ -164,7 +164,7 @@ export class RouterBase {
                 })
                 .replace(/\*/g, '(?:.*)');
 
-            regexp = new RegExp(`/${expression}(?:/$|$)/`);
+            regexp = new RegExp(`${expression}(?:/$|$)`);
         }
 
         return {
@@ -194,26 +194,24 @@ export class RouterBase {
             log(`pushChange, ${path}`);
         }
 
-        await this._resolveLocation(path, history.state, applied);
+        // Resolve already in progress
+        if (this._resolving) {
+            return this._resolving;
+        }
 
-        // // Resolve already in progress
-        // if (this._resolving) {
-        //     return this._resolving;
-        // }
+        this._resolving = this._resolver(this._prevUrl, path).then((result) => {
+            if (result) {
+                this._resolving = null;
+                return this._resolveLocation(path, history.state, applied);
+            } else {
+                return this._revertState().then(() => {
+                    this._resolving = null;
+                    return result;
+                });
+            }
+        });
 
-        // this._resolving = this._resolver(this._prevUrl, path).then((result) => {
-        //     if (result) {
-        //         this._resolving = null;
-        //         return this._resolveLocation(path, history.state, applied);
-        //     } else {
-        //         return this._revertState().then(() => {
-        //             this._resolving = null;
-        //             return result;
-        //         });
-        //     }
-        // });
-
-        // return this._resolving;
+        return this._resolving;
     }
 
     /**
@@ -236,7 +234,7 @@ export class RouterBase {
     private async _resolveLocation(path: string, state: RouterState, applied: boolean) {
         this._handleRoutes(path, state, applied);
         this._saveState(path, state);
-        await this.alwaysFunc(path, state);
+        await this.alwaysFunc(path);
 
         return Promise.resolve(true);
     }

@@ -1,5 +1,7 @@
 <img src="https://i.imgur.com/IKLECXW.jpg" width="150"></img>
 # Glaze UI
+[![Build Status](https://app.travis-ci.com/yoda-libs/glaze-ui.svg?branch=release)](https://app.travis-ci.com/yoda-libs/glaze-ui)
+<br/><br/>
 
 <img src="https://www.freepnglogos.com/uploads/discord-logo-png/discord-logo-logodownload-download-logotipos-1.png" width="35" style="vertical-align:middle" />&nbsp;&nbsp;[Join the chat on Discord](https://discord.gg/hB6ketWMrz)
 
@@ -91,7 +93,7 @@ bootstrap({
         'react': 'https://unpkg.com/react@17.0.2/umd/react.production.min.js',
         'react-dom': 'https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js',
     }
-}).then(async glaze => {
+}).then(glaze => {
     // example on how to send a message to all glaze apps
     glaze.dispatch({test: "message"});
 }).catch(console.error);
@@ -120,6 +122,7 @@ bootstrap({
     - [createRoutes](#createroutes)
     - [route](#route)
     - [defaultRoute](#defaultroute)
+    - [redirectRoute](#redirectroute)
     - [custom middleware](#custom-middleware)
   - [Bootstraping](#bootstraping)
     - [bootstrap](#bootstrap)
@@ -232,14 +235,24 @@ _Defines an `app` or a `layout` to render when url starts with the specified `pa
 * Inputs:
   * `path`: (`string`) - the route path.
   * `appOrLayout`: (`app` | `layout`) - a reference to an [app](#app) or [layout](#creating-layouts).
+  * `props`: (`json`) - additional props to pass to the [app](#app) or [layout](#creating-layouts).
+  * `hooks` - rendering hooks available 
+      ``` ts 
+        {
+            beforeMount?: (props: any) => Promise<void> | void;
+            afterMount?: (props: any) => Promise<void> | void;
+            beforeUnmount?: () => Promise<void> | void;
+            afterUnmount?: () => Promise<void> | void;
+        }
+      ```
 
     _Examples:_
 
-      Register route with an app reference.
+      Register route with an [app](#app) reference.
       ```js
       route('/', apps['navbar'])
       ```
-      Register route with a layout.
+      Register route with a [layout](#creating-layouts).
       ```js
       route('/', createLayout(
           <div className="row">
@@ -255,72 +268,95 @@ _Defines an `app` or a `layout` to render when url starts with the specified `pa
           })
       )
       ```
-  ### defaultRoute
-  _Defines the an `app` or `layout` that will load if no other routes are a match._
-  * Inputs:
-    * `appOrLayout`: (`app` | `layout`) - a reference to an [app](#app) or [layout](#creating-layouts).
 
-      _Examples:_
-
-        Register default route with a 404 layout.
-        ```js
-        defaultRoute(notFoundLayout)
-        ```
-        Register default route inline.
-        ```js
-        defaultRoute(createLayout(<h1>404 Not Found</h1>))
-        ```
-
-  ### custom middleware
-  _Defines a custom middleware._
-  * Inputs:
-    * `function`: (`context`, `next`) - a function that takes `context` and a `next` function.
-      * `context`
-        * `path`: (`string`) - the url path.
-        * `state`: (`object`) - an object with state.
-        * `matches`: (`object`) - an object with `score` and `layout`.
-          * `score`: (`number`) - a number that gives a score to the match.
-          * `layout`: (`layout`) - the layout that matches the url path.
-      * `next`: (`function`) - a function that calls the next middleware.
-
-      _Examples:_
-
-        An authentication middleware.
-        ```js
-        const authMiddleware = async (context, next) => {
-          if (context.path.startsWith('/login')) return next();
-
-          if (context.path.startsWith('/logout')) {
-              localStorage.removeItem('token');
-              return await router.navigate('/login');
-          }
-
-          if (context.path.startsWith('/auth')) {
-              const { token } = context.state;
-
-              localStorage.setItem('token', token);
-              return await router.navigate('/');
-          }
-
-          if (!localStorage.getItem('token')) 
-            return await router.navigate('/login');
-
-          next();
-        };
-        ```
-
-        A simple middleware that mimics a `route`.
-        ```js
-        const customRoute = (context, next) => {
-          if (context.path.startsWith('/custom')) {
-            context.matches.push({
-              score: 50,
-              layout: createLayout(<h1>Custom Page</h1>)
-            });
-          }
-          next();
+### defaultRoute
+_Defines the an `app` or `layout` that will load if no other routes are a match._
+* Inputs:
+  * `appOrLayout`: (`app` | `layout`) - a reference to an [app](#app) or [layout](#creating-layouts).
+  * `props`: (`json`) - additional props to pass to the [app](#app) or [layout](#creating-layouts).
+  * `hooks` - rendering hooks available 
+      ``` ts 
+        {
+            beforeMount?: (props: any) => Promise<void> | void;
+            afterMount?: (props: any) => Promise<void> | void;
+            beforeUnmount?: () => Promise<void> | void;
+            afterUnmount?: () => Promise<void> | void;
         }
-        ```
+      ```
+
+    _Examples:_
+
+      Register default route with a 404 layout.
+      ```js
+      defaultRoute(notFoundLayout)
+      ```
+      Register default route inline.
+      ```js
+      defaultRoute(createLayout(<h1>404 Not Found</h1>))
+      ```
+
+### redirectRoute
+_Defines the an `app` or `layout` that will load if no other routes are a match._
+* Inputs:
+  * `from`: (`string`) - redirect from path.
+  * `to`: (`string`) - redirect to path.
+
+    _Example:_
+
+      ```js
+      redirectRoute('/', '/layout')
+      ```
+
+### custom middleware
+_Defines a custom middleware._
+* Inputs:
+  * `function`: (`context`, `next`) - a function that takes `context` and a `next` function.
+    * `context`
+      * `path`: (`string`) - the url path.
+      * `state`: (`object`) - an object with state.
+      * `matches`: (`object`) - an object with `score` and `layout`.
+        * `score`: (`number`) - a number that gives a score to the match.
+        * `layout`: (`layout`) - the layout that matches the url path.
+    * `next`: (`function`) - a function that calls the next middleware.
+
+    _Examples:_
+
+      An authentication middleware.
+      ```js
+      const authMiddleware = async (context, next) => {
+        if (context.path.startsWith('/login')) return next();
+
+        if (context.path.startsWith('/logout')) {
+            localStorage.removeItem('token');
+            return await router.navigate('/login');
+        }
+
+        if (context.path.startsWith('/auth')) {
+            const { token } = context.state;
+
+            localStorage.setItem('token', token);
+            return await router.navigate('/');
+        }
+
+        if (!localStorage.getItem('token')) 
+          return await router.navigate('/login');
+
+        next();
+      };
+      ```
+
+      A simple middleware that mimics a `route`.
+      ```js
+      const customRoute = (context, next) => {
+        if (context.path.startsWith('/custom')) {
+          context.matches.push({
+            score: 50,
+            layout: createLayout(<h1>Custom Page</h1>)
+          });
+        }
+        next();
+      }
+      ```
 
 ## Bootstraping
 Use `bootstrap` function to initialize the library and bootstrap components. Returns a `Promise` that resolves to an instance of `Glaze`.

@@ -46,14 +46,14 @@ describe('glaze', () => {
 
             const loginApp = await apps['login'].mount(root);
             expect(root.innerHTML).toBe('<div>rendered login</div>');
-            await apps['login'].unmount(root, loginApp);
+            await apps['login'].unmount();
             expect(root.innerHTML).toBe('');
     
         }).catch(console.error);
         window.dispatchEvent(new Event('load'));
     });
 
-    test('router can work with templates', () => {
+    test('router can work with templates', async () => {
         document.body.innerHTML = '<div id="root"></div>';
         const action = (name) => ({
             mount: (container, props) => {
@@ -90,19 +90,20 @@ describe('glaze', () => {
             route('/', layout),
         ]);
 
-        bootstrap({
+        await bootstrap({
             container: document.getElementById('root'),
             apps,
             router
-        }).then(async _ => {
-            expect(document.querySelector('#root').innerHTML).toBe('<div class="row"><div id="navbar"><div>rendered navbar</div></div><div class="column"><div id="left"><div>rendered left</div></div><div id="right"><div>rendered right</div></div></div></div>');
-            await router.navigate('/login');
-            expect(document.querySelector('#root').innerHTML).toBe('<div id=\"login\" glaze=\"layout-auto-generated\"><div>rendered login</div></div>');
         });
-        window.dispatchEvent(new Event('load'));
+        expect(document.querySelector('#root').innerHTML).toBe('<div class="row"><div id="navbar"><div>rendered navbar</div></div><div class="column"><div id="left"><div>rendered left</div></div><div id="right"><div>rendered right</div></div></div></div>');
+        await router.navigate('/login').catch(e => {
+            console.error(e.message);
+        });
+        expect(document.querySelector('#root').innerHTML).toBe('<div id=\"login\" glaze=\"layout-auto-generated\"><div>rendered login</div></div>');
     });
-    it('register shared libs', async () => {
-        document.body.innerHTML = '<div id="root"></div>';
+
+    test('register shared libs', () => {
+        document.body.innerHTML = '<div id="root1"></div>';
         const apps = createApps([
             app('login', {
                 mount: (container, props) => {
@@ -119,16 +120,14 @@ describe('glaze', () => {
             app('navbar1', System.import('http://localhost:8183/navbar.js')),
         ]);
         bootstrap({
-            container: document.getElementById('root'), 
+            container: document.getElementById('root1'), 
             apps,
             sharedLibs: {
-                "react": "https://unpkg.com/react@17/umd/react.production.min.js",
-                "react-dom": "https://unpkg.com/react-dom@17/umd/react-dom.production.min.js",
+                "test": "lib",
             }
         }).then(_ => {
-            const imports = JSON.parse(document.querySelectorAll('[type="systemjs-importmap"]')[0].innerHTML).imports;
-            expect(imports['react']).toBe('https://unpkg.com/react@17/umd/react.production.min.js');
-            expect(imports['react-dom']).toBe('https://unpkg.com/react-dom@17/umd/react-dom.production.min.js');
+            const imports = JSON.parse(document.head.querySelectorAll('script[type="systemjs-importmap"]')[0].innerHTML).imports;
+            expect(imports['test']).toBe('lib');
         }).catch(console.error);
     });
 });
