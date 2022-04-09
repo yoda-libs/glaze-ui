@@ -5,7 +5,8 @@
 
 <img src="https://www.freepnglogos.com/uploads/discord-logo-png/discord-logo-logodownload-download-logotipos-1.png" width="35" style="vertical-align:middle" />&nbsp;&nbsp;[Join the chat on Discord](https://discord.gg/hB6ketWMrz)
 
-## A framework for micro front-end services (MFE)
+## An open-source lightweight (~60kb) framework for micro front-end services (MFE)
+<br/>
 
 `Glaze UI` is a framework that lets you have multiple Micro Front-End (MFE) applications  on the same Single Page Application (SPA). That means you can have different frameworks like React, Angular and Vue running side-by-side. Including different versions of the same framework. 
 
