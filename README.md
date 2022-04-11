@@ -407,7 +407,7 @@ bootstrap({
         container: document.getElementById('root'),
         apps,
         router,
-    }).then(async glaze => {
+    }).then(glaze => {
         // example on how to send a message to all glaze apps
         glaze.dispatch({test: "message"});
     })
